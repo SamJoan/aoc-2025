@@ -81,8 +81,8 @@ func solve_part1(m [][]bool, startCoords []int) int {
 	return splitTimes
 }
 
-func k(x int, y int, path string) string {
-	return fmt.Sprintf("%d,%d,%s", x, y, path)
+func k(x int, y int) string {
+	return fmt.Sprintf("%d,%d", x, y)
 }
 
 func p(key string) (int, int, string) {
@@ -94,48 +94,28 @@ func p(key string) (int, int, string) {
 	return x, y, splat[2]
 }
 
-func solve_part2(m [][]bool, startCoords []int) int {
-	queue := []string{}
-	queue = append(queue, k(startCoords[0], startCoords[1], ""))
-
-	alreadyAdded := map[string]bool{}
-
-	timelines := 1
-	for len(queue) > 0 {
-		key := queue[0]
-		queue = queue[1:]
-
-		x, y, path := p(key)
-
-		if y >= len(m) - 1 {
-			continue
-		}
-
-		elem := m[y][x]
-		if elem == false {
-			queue = append(queue, k(x, y + 1, path))
-		} else {
-			timelines += 1
-			key := k(x + 1, y, path + "R")
-			if !alreadyAdded[key] {
-				fmt.Printf("Already added %s\n", key)
-				alreadyAdded[key] = true
-				queue = append(queue, key)
-			}
-
-			key = k(x - 1, y, path + "L")
-			if !alreadyAdded[key] {
-				fmt.Printf("Already added %s\n", key)
-				alreadyAdded[key] = true
-				queue = append(queue, key)
-			}
-
-			fmt.Printf("%d, %d is ^, timelines: %d\n", x, y, timelines)
-			// fmt.Scanln()
-		}
+func solve_part2(m *[][]bool, cache *map[string]int, x int, y int) int {
+	cache_key := k(x, y)
+	val, ok := (*cache)[cache_key] 
+	if ok {
+		return val
+	}
+	
+	if y > len(*m) - 1 {
+		return 1
 	}
 
-	return timelines
+	result := 0
+	if (*m)[y][x] {
+		result += solve_part2(m, cache, x + 1, y)
+		result += solve_part2(m, cache, x - 1, y)
+	} else {
+		result += solve_part2(m, cache, x, y + 1)
+	}
+
+	(*cache)[cache_key] = result
+
+	return result
 }
 
 func main() {
@@ -145,9 +125,11 @@ func main() {
 		panic(err)
 	}
 
-	// part1 := solve_part1(m, coords)
-	part2 := solve_part2(m, coords)
+	cache := map[string]int{}
+
+	part1 := solve_part1(m, coords)
+	part2 := solve_part2(&m, &cache, coords[0], coords[1])
 	
-	// fmt.Printf("Result %d\n", part1)
+	fmt.Printf("Result %d\n", part1)
 	fmt.Printf("Result %d\n", part2)
 }
